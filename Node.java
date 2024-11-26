@@ -22,5 +22,14 @@ public class Node {
     public void setPointer(Bucket p){
         pointer = p;
     }
+
+    public String toString(){
+        return key+": "+ pointer.toString();
+    }
     
+    public static void main(String[] args){
+        Bucket bucket = new Bucket(2, "11", 2);
+        Node node = new Node("11", bucket);
+        System.out.println(node.toString());
+    }
 }

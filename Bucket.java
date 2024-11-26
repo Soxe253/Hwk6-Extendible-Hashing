@@ -29,13 +29,13 @@ public class Bucket {
         String result = "[";
         for(int i = 0; i < tuples.length; i++){
             if(i == (tuples.length - 1)){
-                result = result + tuples[i] + "]";
+                result = result + tuples[i];
             }
             else{
             result = result + tuples[i] + ", ";
             }
         }
-        return "Local("+bitDepth+")["+bAddress+"] = " + result;
+        return "Local("+bitDepth+")["+bAddress+"] = " + result+"]";
         
     }
 
