@@ -46,6 +46,10 @@ public class Bucket {
         return bitDepth;
     }
 
+    public void incrementDepth(){
+        bitDepth++;
+    }
+
     /**
      * Adds the binary string to the buckets list
      * @param num the string to add
@@ -103,14 +107,9 @@ public class Bucket {
     }
 
     public static void main(String[] args){
-        Bucket bucket = new Bucket(1, "10", 2);
-        bucket.tuples[0] = "1000";
-        bucket.tuples[1] = "1010";
-        System.out.println(bucket.toString());
-        int x = 37;
-        String temp = Integer.toBinaryString(x);
-        System.out.println(temp);
-        System.out.println(temp.substring(0,2));
+        String bin = "1001";
+        int x = Integer.parseInt(bin, 2);
+        System.out.println(x);
     }
     
 }

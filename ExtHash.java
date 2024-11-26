@@ -10,7 +10,7 @@ int bucketSize;
         keyLength= kLength;
         bucketSize = 2;
         list = new Node[1];
-        Bucket bucket = new Bucket(0, "", bucketSize);
+        Bucket bucket = new Bucket(0, "0", bucketSize);
         Node node = new Node("", bucket);
         list[0] = node;
     }
@@ -53,109 +53,79 @@ int bucketSize;
      * resizes the table and changes the variables
      */
     private void resize(Node target){
-        System.out.println("target: "+ target.toString());
-        globBitDepth++;//increase global depth
-        Node[] tempList = new Node[(int) Math.pow(2, globBitDepth)];
-        //double the size of the list, set its keys
-        for(int i = 0; i < tempList.length; i++){
-            String bin = Integer.toBinaryString(i);
-                if(bin.length() < globBitDepth){
-                    for(int x = bin.length(); x < globBitDepth; x++){
-                        bin = "0" + bin;
-                    }
-                }
-                String key = bin.substring(0, globBitDepth);
-                Node node = new Node(key, null);
-                tempList[i] = node;
-        }
-            int index = 0;
+        //Adding: 0000
+// : Local(0)[*] = [null, null]
+// Adding: 0001
+// : Local(0)[*] = [0000, null]
+// Adding: 0010
+// : Local(0)[*] = [0000, 0001]
+// bAdd: 0
+// Global(0)
+// : Local(1)[0*] = [0001, null]
+//last run
+        Bucket bucket = target.getPointer();
+            bucket.incrementDepth();
+            if(globBitDepth == 0){
+                bucket.setAddr("0");
+            }
+            String bAdd = bucket.getBAddr().substring(0, bucket.getDepth());
+            System.out.println("bAdd: " + bAdd);
+            int newBin = Integer.parseInt(bAdd, 2);
+            newBin++;
+            String nBin = Integer.toBinaryString(newBin).substring(0,bucket.getDepth());
+            Bucket newBucket = new Bucket(bucket.getDepth(), nBin, bucketSize);
+        if(globBitDepth == bucket.getDepth()){
+            globBitDepth++;
+            Node[] tempList = new Node[(int) Math.pow(2, globBitDepth)];
             for(int i = 0; i < tempList.length; i++){
-                Bucket bucket = list[index].getPointer();
-                System.out.println("index/bucket: " + index + " "+ bucket.toString());
-                System.out.println("i: " + i);
-                if(target != null && target.getPointer() == bucket){
-                    if(bucket.getDepth() < globBitDepth){
-                        int totalPointers = bucket.getNumPointers();
-                        
-                    }
-                        target = null;
-                        // int depth;
-                        // if(bucket.getNumPointers() > 1){
-                        //     depth = bucket.getDepth();
-                        // }
-                        // else{
-                        //     depth = globBitDepth;
-                        // }
-                        Bucket[] buckets = splitBucket(bucket, tempList[i].getKey(), depth);//split the target overflown bucket and redistribute 
-                        Bucket newBucket = buckets[0];
-                        Bucket oldBucket = buckets[1];
-                        newBucket.setNumPointers(bucket.getNumPointers());
-                        Node tempNode = new Node(tempList[i].getKey(), newBucket);//put the new bucket in for the current key
-                        tempList[i] = tempNode;
-                        i++;//now increase the marker on the loop to do the next bucket
-                        String tempBin = Integer.toBinaryString(i);
-                        if(i < globBitDepth){
-                            for(int y = tempBin.length(); y < globBitDepth; y++){
-                                tempBin = "0" + tempBin;
-                            }
+                String bin = Integer.toBinaryString(i);
+                    if(bin.length() < globBitDepth){
+                        for(int x = bin.length(); x < globBitDepth; x++){
+                            bin = "0" + bin;
                         }
-                        String key2 = tempBin.substring(0, globBitDepth);
-                        buckets[1].setDepth(globBitDepth);
-                        buckets[1].setAddr(key2);
-                        Node tempNode2 = new Node(key2, oldBucket);//the old bucket was changed to hold the next keys in line
-                        tempList[i] = tempNode2;
-                        int totPointers = bucket.getNumPointers() * 2;
-                        
-                        // if(bucket.getNumPointers() > 1){//extra split for when there target is already split
-                        //     i--;
-                        //     int curr = i;
-                        //     for(int y = curr; y < (curr+totPointers); y++){
-                        //         System.out.println("y: "+y);
-                        //         if(y < (curr + (totPointers/2))){
-                        //             tempList[y].setPointer(newBucket);
-                        //         }
-                        //         else{
-                        //             tempList[y].setPointer(oldBucket);
-                        //         }
-                        //         i++;
-                        //     }
-                        //     i--;
-                        //     System.out.println("pointers: " + newBucket.getNumPointers());
-                        //     index = index + newBucket.getNumPointers();
-                        //     newBucket.setNumPointers(bucket.getNumPointers());
-                        //     oldBucket.setNumPointers(bucket.getNumPointers());
-                        //     continue;
-                        // }
-                        // index++;
-                        // continue;//continue the loop
-                }
-                else{
-                String add = bucket.getBAddr().substring(0,bucket.getBAddr().length()-1);
-                System.out.println("add: "+add);
-                int oldPointers = bucket.getNumPointers();
-                System.out.println("opointers: " + oldPointers);
-                for(int q = 0; q < tempList.length; q++){
-                    //System.out.println("getkey: " +tempList[q].getKey());
-                    if(add.equals(tempList[q].getKey().substring(0, add.length()))){
-                        tempList[q].setPointer(bucket);
-                        System.out.println("non split: " + tempList[q].toString());
-                            i++;
                     }
-                }
-                bucket.setNumPointers(bucket.getNumPointers() * 2);
-                i--;
-                index = index + oldPointers;
+                    String key = bin.substring(0, globBitDepth);
+                    Node node = new Node(key, null);
+                    tempList[i] = node;
+            }
+            rehashBuckets(bucket, newBucket);
+            for(int y = 0; y < list.length; y++){//double loop to iterate through each one in old list for the new list
+                String bAddr = list[y].getPointer().getBAddr().substring(0,bucket.getDepth() -1);
+                String newAddr = newBucket.getBAddr().substring(0,bucket.getDepth() -1);
+                for(int x = 0; x < tempList.length; x++){
+                    String key = tempList[x].getKey().substring(0,bucket.getDepth());
+                    if(key.equals(bAddr)){//check if key to the local depth equals the bucket addr
+                        tempList[x].setPointer(list[y].getPointer());
+                    }
+                    else if(key.equals(newAddr)){
+                        tempList[x].setPointer(newBucket); 
+                    }
+                    else{
+                        break;
+                    }
                 }
             }
-        
-        list = tempList;
+        }
+        else{
+            rehashBuckets(bucket, newBucket);
+            String oAdd = bucket.getBAddr().substring(0, bucket.getDepth());
+            String nAdd = newBucket.getBAddr().substring(0, newBucket.getDepth());
+            for(int t = 0; t < list.length; t++){
+                if(list[t].getKey().equals(oAdd)){
+                    list[t].setPointer(bucket);
+                }
+                else if(list[t].getKey().equals(nAdd)){
+                    list[t].setPointer(newBucket);
+                }
+            }
+        }
     }
 
-    private Bucket[] splitBucket(Bucket oldBucket, String addr, int depth){
-        Bucket newBucket = new Bucket(depth, addr, bucketSize);
+    private void rehashBuckets(Bucket oldBucket, Bucket newBucket){
+        String addr = newBucket.getBAddr().substring(0, newBucket.getBAddr().length()-1);
         for(int i = 0; i < oldBucket.tuples.length; i++){
             String temp = oldBucket.tuples[i];
-            if(temp.substring(0, depth).equals(addr)){
+            if(temp.substring(0, newBucket.getDepth()).equals(addr)){
                 newBucket.add(temp);
                 if(temp != null){
                 oldBucket.delete(temp);
@@ -163,8 +133,7 @@ int bucketSize;
             }
         }
         oldBucket.fixTuples();
-        Bucket[] buckets = {newBucket, oldBucket};
-        return buckets;
+        return;
     }
 
     public String toString(){
@@ -178,15 +147,8 @@ int bucketSize;
     public static void main(String[] args){
         ExtHash table = new ExtHash(4);
         table.insert("0000");
-        table.insert("1000");
-        System.out.println(table.toString());
-        table.insert("1100");
-        System.out.println(table.toString());
-        table.insert("1010");
-        System.out.println(table.toString());
         table.insert("0001");
+        table.insert("0010");
         System.out.println(table.toString());
-        // table.insert("0100");
-        // System.out.println(table.toString());
     }
 }
