@@ -4,12 +4,14 @@ public class Bucket {
     int bSize;
     String[] tuples;
     String bAddress;
+    int arrayPointer;
 
     public Bucket(int depth, String addr, int size){
         bitDepth = depth;
         address = addr;
         bSize = size;
         tuples = new String[bSize];
+        arrayPointer = 0;
         bAddress = address.substring(0, bitDepth) + "*";
     }
 
@@ -19,10 +21,57 @@ public class Bucket {
 
     public void setAddr(String addr){
         address = addr;
+        bAddress = address.substring(0, bitDepth) + "*";
     }
 
     public void setBucketAddress(String addr){
         bAddress = addr;
+    }
+
+    public String getBAddr(){
+        return bAddress;
+    }
+
+    /**
+     * Adds the binary string to the buckets list
+     * @param num the string to add
+     * @return true if its added, false if the bucket is full and cant be added
+     */
+    public boolean add(String num){
+        if(arrayPointer < tuples.length){
+            tuples[arrayPointer] = num;
+            arrayPointer++;
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    public boolean delete(String num){
+        for(int i = 0; i < tuples.length; i++){
+            if(tuples[i] != null && tuples[i].equals(num)){
+                tuples[i] = null;
+                arrayPointer--;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void fixTuples(){
+        int open = 0;
+        for(int i = 0; i < tuples.length; i++){
+            if(tuples[i] == null){
+                open = i;
+                continue;
+            }
+            else if(open != i){
+                tuples[open] = tuples[i];
+                tuples[i] = null;
+                open = i;
+            }
+        }
     }
 
     public String toString(){
