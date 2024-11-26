@@ -5,6 +5,7 @@ public class Bucket {
     String[] tuples;
     String bAddress;
     int arrayPointer;
+    int numPointers;
 
     public Bucket(int depth, String addr, int size){
         bitDepth = depth;
@@ -12,6 +13,7 @@ public class Bucket {
         bSize = size;
         tuples = new String[bSize];
         arrayPointer = 0;
+        numPointers = 1;
         bAddress = address.substring(0, bitDepth) + "*";
     }
 
@@ -30,6 +32,18 @@ public class Bucket {
 
     public String getBAddr(){
         return bAddress;
+    }
+
+    public int getNumPointers(){
+        return numPointers;
+    }
+
+    public void setNumPointers(int num){
+        numPointers = num;
+    }
+
+    public int getDepth(){
+        return bitDepth;
     }
 
     /**
@@ -93,6 +107,10 @@ public class Bucket {
         bucket.tuples[0] = "1000";
         bucket.tuples[1] = "1010";
         System.out.println(bucket.toString());
+        int x = 37;
+        String temp = Integer.toBinaryString(x);
+        System.out.println(temp);
+        System.out.println(temp.substring(0,2));
     }
     
 }
