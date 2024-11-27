@@ -1,37 +1,64 @@
 import java.lang.Math;
+import java.util.Scanner;
 public class ExtHash{
 int globBitDepth;
 Node[] list;
 int keyLength;
 int bucketSize;
 
-    public ExtHash(int kLength){
+    /**
+     * constructor for the extendible hash table
+     * @param kLength the length of the keys in the table
+     * @param bSize the amount of strings stored in a bucket
+     */
+    public ExtHash(int kLength, int bSize){
         globBitDepth = 0;
         keyLength= kLength;
-        bucketSize = 2;
+        bucketSize = bSize;
         list = new Node[1];
-        Bucket bucket = new Bucket(0, "0", bucketSize);
+        Bucket bucket = new Bucket(0, "", bucketSize);
         Node node = new Node("", bucket);
         list[0] = node;
     }
 
-    public void insert(String num){
-        if(num.length() > keyLength){
-            System.out.println("Error: Key length exceeds " + keyLength);
-            return;
+    /**
+     * Inserts a string into the table
+     * @param num the binary string to be inserted
+     * @return true if it succeeds, false if otherwise
+     */
+    public boolean insert(String num){
+        if(search(num)){
+            return false;
         }
-        System.out.println("Adding: " + num);
         Node hit = findHit(num);
-        System.out.println(hit.toString());
 
-        if(hit.getPointer().add(num) == false){
+        while(hit.getPointer().add(num) == false){
             resize(hit);
             hit = findHit(num);
-            //System.out.println(hit.toString());
-            //System.out.println(toString());
-            hit.getPointer().add(num);
         }
+        return true;
         
+    }
+
+    /**
+     * Searches for a string in the table
+     * @param bin the string to search for
+     * @return true if its found, false otherwise
+     */
+    public boolean search(String bin){
+        Node hit = findHit(bin);
+        if(hit == null){
+            return false;
+        }
+        else{
+            Bucket bucket = hit.getPointer();
+            for(int i = 0; i < bucket.tuples.length; i++){
+                if(bucket.tuples[i] != null && bucket.tuples[i].equals(bin)){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     /**
@@ -53,31 +80,20 @@ int bucketSize;
      * resizes the table and changes the variables
      */
     private void resize(Node target){
-        //Adding: 0000
-// : Local(0)[*] = [null, null]
-// Adding: 0001
-// : Local(0)[*] = [0000, null]
-// Adding: 0010
-// : Local(0)[*] = [0000, 0001]
-// bAdd: 0
-// Global(0)
-// : Local(1)[0*] = [0001, null]
-//last run
-        Bucket bucket = target.getPointer();
-            bucket.incrementDepth();
-            if(globBitDepth == 0){
-                bucket.setAddr("0");
-            }
-            String bAdd = bucket.getBAddr().substring(0, bucket.getDepth());
-            System.out.println("bAdd: " + bAdd);
-            int newBin = Integer.parseInt(bAdd, 2);
-            newBin++;
-            String nBin = Integer.toBinaryString(newBin).substring(0,bucket.getDepth());
-            Bucket newBucket = new Bucket(bucket.getDepth(), nBin, bucketSize);
-        if(globBitDepth == bucket.getDepth()){
+        if(globBitDepth == target.getPointer().getDepth()){
+            Bucket currBucket = target.getPointer();
+            Bucket newBucket = new Bucket(currBucket.getDepth() + 1, currBucket.getBAddr(), bucketSize);//allocate new disk bloc
             globBitDepth++;
-            Node[] tempList = new Node[(int) Math.pow(2, globBitDepth)];
-            for(int i = 0; i < tempList.length; i++){
+            
+            Node[] tempList = new Node[(int) Math.pow(2, globBitDepth)];//double global directory
+            //need to set the new buckets addr as the next bit and the curr bucket
+            String tempAdd = currBucket.getBAddr();
+            currBucket.incrementDepth();//increment depth
+            currBucket.setBucketAddress(tempAdd + "0");
+            newBucket.setBucketAddress(tempAdd + "1");
+            rehashBuckets(currBucket, newBucket);//rehash the buckets
+
+            for(int i = 0; i < tempList.length; i++){//fill new list with correct keys
                 String bin = Integer.toBinaryString(i);
                     if(bin.length() < globBitDepth){
                         for(int x = bin.length(); x < globBitDepth; x++){
@@ -88,41 +104,55 @@ int bucketSize;
                     Node node = new Node(key, null);
                     tempList[i] = node;
             }
-            rehashBuckets(bucket, newBucket);
-            for(int y = 0; y < list.length; y++){//double loop to iterate through each one in old list for the new list
-                String bAddr = list[y].getPointer().getBAddr().substring(0,bucket.getDepth() -1);
-                String newAddr = newBucket.getBAddr().substring(0,bucket.getDepth() -1);
-                for(int x = 0; x < tempList.length; x++){
-                    String key = tempList[x].getKey().substring(0,bucket.getDepth());
-                    if(key.equals(bAddr)){//check if key to the local depth equals the bucket addr
-                        tempList[x].setPointer(list[y].getPointer());
+
+            //update pointers in the new directory
+            String newAddr = newBucket.getBAddr();
+            int index = 0;
+            for(int x = 0; x < list.length; x++){
+                String currAddr = list[x].getPointer().getBAddr();
+                currBucket = list[x].getPointer();
+                if(currAddr.equals("01")){
+                }
+                for(int y = index; y < tempList.length; y++){
+                    if(currAddr.equals(tempList[y].getKey().substring(0,currBucket.getDepth()))){
+                        tempList[y].setPointer(currBucket);
                     }
-                    else if(key.equals(newAddr)){
-                        tempList[x].setPointer(newBucket); 
+                    else if(newAddr.equals(tempList[y].getKey().substring(0,newBucket.getDepth()))){
+                        tempList[y].setPointer(newBucket);
                     }
                     else{
+                        index = y;
                         break;
                     }
                 }
             }
+            list = tempList;
         }
         else{
-            rehashBuckets(bucket, newBucket);
-            String oAdd = bucket.getBAddr().substring(0, bucket.getDepth());
-            String nAdd = newBucket.getBAddr().substring(0, newBucket.getDepth());
-            for(int t = 0; t < list.length; t++){
-                if(list[t].getKey().equals(oAdd)){
-                    list[t].setPointer(bucket);
+            Bucket currBucket = target.getPointer();
+            currBucket.incrementDepth();//increment depth
+            Bucket newBucket = new Bucket(currBucket.getDepth(), currBucket.getBAddr(), bucketSize);//allocate new disk bloc
+            //need to set the new buckets addr as the next bit and the curr bucket
+            String tempAdd = currBucket.getBAddr();
+            currBucket.setBucketAddress(tempAdd + "0");
+            newBucket.setBucketAddress(tempAdd + "1");
+            rehashBuckets(currBucket, newBucket);//rehash the buckets
+            for(int w = 0; w < list.length; w++){
+                if(currBucket.getBAddr().equals(list[w].getKey().substring(0,currBucket.getDepth()))){
+                    list[w].setPointer(currBucket);
                 }
-                else if(list[t].getKey().equals(nAdd)){
-                    list[t].setPointer(newBucket);
+                else if(newBucket.getBAddr().equals(list[w].getKey().substring(0,newBucket.getDepth()))){
+                    list[w].setPointer(newBucket);
                 }
             }
+
         }
+        
     }
 
+    //rehashes the two buckets given
     private void rehashBuckets(Bucket oldBucket, Bucket newBucket){
-        String addr = newBucket.getBAddr().substring(0, newBucket.getBAddr().length()-1);
+        String addr = newBucket.getBAddr();
         for(int i = 0; i < oldBucket.tuples.length; i++){
             String temp = oldBucket.tuples[i];
             if(temp.substring(0, newBucket.getDepth()).equals(addr)){
@@ -136,6 +166,9 @@ int bucketSize;
         return;
     }
 
+    /**
+     * returns a string version of the table
+     */
     public String toString(){
         String result = "Global("+globBitDepth+")";
         for(int i = 0; i < list.length; i++){
@@ -145,10 +178,51 @@ int bucketSize;
     }
 
     public static void main(String[] args){
-        ExtHash table = new ExtHash(4);
-        table.insert("0000");
-        table.insert("0001");
-        table.insert("0010");
-        System.out.println(table.toString());
+        if(args.length == 0){
+            System.out.println("Usage: java ExtHash <block size> <key length>");
+            return;
+        }
+        else if(Integer.parseInt(args[0]) < 1 ){
+            System.out.println("Error: block size must be at least 1");
+            return;
+        }
+        else if(Integer.parseInt(args[1]) < 1){
+            System.out.println("Error: key length must be positive");
+            return;
+        }
+        Scanner scanner = new Scanner(System.in);
+        ExtHash table = new ExtHash(Integer.parseInt(args[1]), Integer.parseInt(args[0]));
+        String input = "";
+        while(!input.equals("q")){
+            input = scanner.nextLine();
+            String bin = "";
+            if(input.length() > 2){
+                bin = input.substring(2, input.length());
+            }
+        if(bin.length() > table.keyLength){
+            System.out.println("Error: key exceeds length " + table.keyLength);
+            continue;
+        }
+            if(input.substring(0, 1).equals("i")){
+                if(table.insert(bin)){
+                    System.out.println("SUCCESS");
+                }
+                else{
+                    System.out.println("FAILED");
+                }
+            }
+            else if(input.substring(0, 1).equals("s")){
+                if(table.search(bin)){
+                    System.out.println(bin + " FOUND");
+                }
+                else{
+                    System.out.println(bin + " NOT FOUND");
+                }
+            }
+            else if(input.substring(0, 1).equals("p")){
+                System.out.println(table.toString());
+            }
+        }
+        scanner.close();
     }
 }

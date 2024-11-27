@@ -1,51 +1,59 @@
 public class Bucket {
     int bitDepth;
-    String address;
     int bSize;
     String[] tuples;
     String bAddress;
     int arrayPointer;
-    int numPointers;
 
+    /**
+     * the constructor for the bucket
+     * @param depth the depth of the bucket
+     * @param addr the address
+     * @param size the amount of strings that can be stored
+     */
     public Bucket(int depth, String addr, int size){
         bitDepth = depth;
-        address = addr;
         bSize = size;
         tuples = new String[bSize];
         arrayPointer = 0;
-        numPointers = 1;
-        bAddress = address.substring(0, bitDepth) + "*";
+        bAddress = addr;
     }
 
+    /**
+     * sets the depth of the bucket
+     * @param depth the depth to be set
+     */
     public void setDepth(int depth){
         bitDepth = depth;
     }
 
-    public void setAddr(String addr){
-        address = addr;
-        bAddress = address.substring(0, bitDepth) + "*";
-    }
-
+    /**
+     * Sets the address of the bucket
+     * @param addr the address to set
+     */
     public void setBucketAddress(String addr){
         bAddress = addr;
     }
 
+    /**
+     * gets the address of the bucket
+     * @return the address
+     */
     public String getBAddr(){
         return bAddress;
     }
 
-    public int getNumPointers(){
-        return numPointers;
-    }
-
-    public void setNumPointers(int num){
-        numPointers = num;
-    }
-
+    /**
+     * gets the depth 
+     * @return the depth of the bucket
+     */
     public int getDepth(){
         return bitDepth;
     }
 
+    /**
+     * increments the depth by 1
+     */
     public void incrementDepth(){
         bitDepth++;
     }
@@ -66,6 +74,11 @@ public class Bucket {
         }
     }
 
+    /**
+     * deletes the specified string from the tuples list
+     * @param num the string to delete
+     * @return true if succeeds, false otherwise
+     */
     public boolean delete(String num){
         for(int i = 0; i < tuples.length; i++){
             if(tuples[i] != null && tuples[i].equals(num)){
@@ -77,21 +90,36 @@ public class Bucket {
         return false;
     }
 
+    //fix the tuples in the array
     public void fixTuples(){
-        int open = 0;
+        int open = -1;
         for(int i = 0; i < tuples.length; i++){
             if(tuples[i] == null){
-                open = i;
+                if(open == - 1){
+                    open = i;
+                }
                 continue;
             }
-            else if(open != i){
+            if(open != -1 && open != i){
                 tuples[open] = tuples[i];
                 tuples[i] = null;
-                open = i;
+                open = findNextOpenIndex(i + 1);
             }
         }
     }
 
+    private int findNextOpenIndex(int start) {
+        for (int i = start; i < tuples.length; i++) {
+            if (tuples[i] == null) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * returns a stringify vers of the bucket
+     */
     public String toString(){
         String result = "[";
         for(int i = 0; i < tuples.length; i++){
@@ -102,14 +130,7 @@ public class Bucket {
             result = result + tuples[i] + ", ";
             }
         }
-        return "Local("+bitDepth+")["+bAddress+"] = " + result+"]";
+        return "Local("+bitDepth+")["+bAddress+"*] = " + result+"]";
         
     }
-
-    public static void main(String[] args){
-        String bin = "1001";
-        int x = Integer.parseInt(bin, 2);
-        System.out.println(x);
-    }
-    
 }

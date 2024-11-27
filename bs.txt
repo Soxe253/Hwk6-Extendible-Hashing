@@ -1,0 +1,87 @@
+Bucket bucket = target.getPointer();
+        Bucket newBucket;
+            if(globBitDepth == 0){//first go around case
+                bucket.setAddr("0*");
+                bucket.incrementDepth();
+    
+                globBitDepth++;
+                String bAdd = bucket.getBAddr();
+                System.out.println("getbaddr: " + bucket.getBAddr());
+                System.out.println("bAdd: " + bAdd);
+                int newBin = Integer.parseInt(bAdd, 2);
+                newBin++;
+                System.out.println("newbin: "+newBin);
+                String nBin = Integer.toBinaryString(newBin).substring(0,bucket.getDepth());
+                System.out.println("newbin: "+ nBin);
+                newBucket = new Bucket(bucket.getDepth(), nBin, bucketSize);
+            }
+            else{
+                globBitDepth++;
+                String bAdd = bucket.getBAddr();
+                System.out.println("getbaddr: " + bucket.getBAddr());
+                System.out.println("bAdd: " + bAdd);
+                int newBin = Integer.parseInt(bAdd, 2);
+                newBin++;
+                System.out.println("newbin: "+newBin);
+                String nBin = Integer.toBinaryString(newBin).substring(0,bucket.getDepth());
+                System.out.println("newbin: "+ nBin);
+                newBucket = new Bucket(bucket.getDepth(), nBin, bucketSize);
+                bucket.incrementDepth();
+            }
+        if(globBitDepth == bucket.getDepth()){
+            System.out.println("first case");
+            Node[] tempList = new Node[(int) Math.pow(2, globBitDepth)];
+
+            for(int i = 0; i < tempList.length; i++){
+                String bin = Integer.toBinaryString(i);
+                    if(bin.length() < globBitDepth){
+                        for(int x = bin.length(); x < globBitDepth; x++){
+                            bin = "0" + bin;
+                        }
+                    }
+                    String key = bin.substring(0, globBitDepth);
+                    Node node = new Node(key, null);
+                    tempList[i] = node;
+            }
+            rehashBuckets(bucket, newBucket);
+            System.out.println("b1: " + bucket.toString());
+            System.out.println("b2: " + newBucket.toString());
+            for(int y = 0; y < list.length; y++){//double loop to iterate through each one in old list for the new list
+                String bAddr = list[y].getPointer().getBAddr();
+                System.out.println("bAddr: " + bAddr);
+                String newAddr = newBucket.getBAddr();
+                System.out.println("newAddr: " + newAddr);
+                for(int x = 0; x < tempList.length; x++){
+                    String key = tempList[x].getKey().substring(0,bucket.getDepth());
+                    System.out.println("key: " + key);
+                    if(key.equals(bAddr)){//check if key to the local depth equals the bucket addr
+                        System.out.println("key equals buck");
+                        tempList[x].setPointer(list[y].getPointer());
+                    }
+                    else if(key.equals(newAddr)){
+                        System.out.println("key equals newbuck");
+                        tempList[x].setPointer(newBucket); 
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            list = tempList;
+        }
+        else{
+            System.out.println("second case");
+            globBitDepth--;
+            rehashBuckets(bucket, newBucket);
+            String oAdd = bucket.getBAddr();
+            String nAdd = newBucket.getBAddr();
+            for(int t = 0; t < list.length; t++){
+                if(list[t].getKey().equals(oAdd)){
+                    list[t].setPointer(bucket);
+                }
+                else if(list[t].getKey().equals(nAdd)){
+                    list[t].setPointer(newBucket);
+                }
+            }
+        }
+        
